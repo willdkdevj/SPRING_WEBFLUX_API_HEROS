@@ -32,6 +32,13 @@ public class MemberService {
         return  Mono.justOrEmpty(this.memberRepository.findByName(name));
     }
 
+    /*
+    public  Mono<Member> updateMember(Member member) throws MemberNotFoundException {
+        checkedIfExistsMember(member.getName());
+        return  Mono.justOrEmpty(this.memberRepository.saveAndFlush(member));
+    }
+
+     */
 
     public Mono<Member> save(Member member) throws MemberAlreadyRegisteredException {
         checkIfThereIsARecord(member.getName());
