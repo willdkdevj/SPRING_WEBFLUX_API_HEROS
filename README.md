@@ -1,4 +1,4 @@
-# Implementando API REST para Gerenciamento de Registro de Heróis e Vilões do Universo Marvel e DC
+# Implementando REST API para Gerenciamento de Registro de Heróis e Vilões do Universo Marvel e DC
 > Este projeto consiste em uma API de gerenciamento de membros dos universos Marvel e DC, na qual foram implementados o Spring Webflux, que possibilita interagir de modo reativo.
 
 [![Spring Badge](https://img.shields.io/badge/-Spring-brightgreen?style=flat-square&logo=Spring&logoColor=white&link=https://spring.io/)](https://spring.io/)
@@ -17,84 +17,56 @@ A aplicação consiste em operações que permitem gerenciar os registros de her
 * Excluir o cadastro de um membro (herói/vilão);
 * Listar todos os membros de todos os universos (Marvel/DC);
 
-No projeto foi utilizado o framework Spring Reative Web, também chamado de WebFlux, ele é um módulo que possibilita aplicações web com Spring do lado servidor trabalhar de forma reativa. Este framework tem a caracteristica de ser ``assíncrono``, isto significa que, ele pode iniciar outro processo enquanto está analisando outro, permitindo uma interação maior com o cliente.
+No projeto foi utilizado o framework Spring Reative Web, também conhecido como ``Webflux``, ele é um módulo que possibilita aplicações web com Spring trabalhem de forma reativa. Isto significa que este framework tem a caracteristica de ser ``assíncrono``, permitindo que ele inicie outro processo mesmo enquanto analisa outro, possibilitando uma maior interação com o cliente.
 
 Para entender melhor esta dinâmica, vou apresentar como funciona um processo ``sincrôno``, na qual um cliente envia uma requisição para o servidor, que requisita um volume considerável de informações. Logo, o servidor levará um tempo para retornar uma devolutiva para o cliente, mas o cliente impaciente acabou enviando mais três requisições, na quais aguardarão o processamento da primeira requisição enviada até a primeira delas serem processadas, ficando desta forma bloqueadas.
 
 Já no processo do WebFlux (*assíncrono*) as requisições chegam ao servidor e já são tratadas em tempo real, desta forma, utilizando o exemplo anterior, se uma requisição inicia no servidor, na qual requer uma grande quantidade de informações, e o cliente acaba enviando mais trẽs requisições, o servidor trabalhará de forma paralela tentando atendê-las o mais rápido possível. Isto significa, que qual terminar primeiro será devolvida ao cliente, evitando gargálos.
 
-Desta forma, a API (*Application Programming Interface*) REST (*Representational State Transfer*) tem a função de administrar os comandos, protocolos e objetos a fim de agir como ponte das informações obtidas de uma arquitetura computacional voltada a aplicações interligadas por rede, na qual depende de um protocolo de comunicação de transação independente e de uma estrutura ``cliente-servidor``. 
+Para possibilitar que o framework Spring trabalha-se de forma reativa o ``Spring Data`` obteve modificações em sua estrutura, deste mode, ele permite utilizar os tipos Flux e Mono para serem mapeados como resultado. Na programação reativa é preciso utilizar os bancos de dados com suporte para a programação reativa, para que todo o fluxo seja assíncrono e não bloqueante. Desta forma, para este projeto estamos utilizando o MongoDB Atlas...
 
-Desta forma, toda vez que uma requisição, oriunda de um navegador web, é encaminhada para uma URI (*Uniform Resource Identifiers*), na qual encontrasse mapeada pela API, ela é direcionada para onde deve seguir a fim de encontrar a resposta e retorná-la ao cliente. Ela (a requisição) irá interagir com o servidor. A REST tem o conceito de como deve ser tratada esta requisição, com os dados obtidos pelo protocolo HTTP utilizando o formato JSON, por exemplo, mas poderia ser XML, YAML, texto, entre outros.
+Quando é utilizado este tipo de banco, ao se fazer uma persistência de um dado, por exemplo, o driver inicia a transação e ao término, cria uma nova instancia desse objeto para ser retornado. 
+
+Utilizando um banco de dados SQL tradicional, a transação de uma persistência fica bloqueada até que seja finalizada para a mesma referencia do objeto ser retornada, gerando assim, um ponto de bloqueio na aplicação. Por isso, para garantir que a aplicação seja não bloqueante em todos os pontos de processamento, é preciso utilizar drivers já adaptados para esse tipo de programação reativa.
+
+Para utilizar o Spring Data com MongoDB, por exemplo, basta adicionar sua dependência no arquivo pom.xml.
+
+E assim como no JpaRepository, é possivel criar um repository e estender o ReactiveMongoRepository para desfrutar de vários métodos prontos para transações com banco de dados, como por exemplo findAll, findById, entre outros. E também, é possível criar métodos customizados e obter como retorno um tipo Flux ou Mono.
+
+Quando utilizar o modelo síncrono com Spring MVC ou assíncrono com Spring Webflux
+
+O Spring Webflux não veio para substituir o Spring MVC. São maneiras diferentes de se construir aplicações web e cada uma tem seu propósito. Por isso, ao escolher entre uma ou outra, é preciso conhecer e definir o objetivo e necessidades da aplicação, para que assim, o melhor módulo seja utilizado.
+Para quem se interessar…
+
+Para quem gostou deste tema e gostaria de aprender mais, segue o link de um curso no Youtube onde há o passo a passo de como construir uma API REST reativa com Spring Webflux e MongoDB: 
+
+https://medium.com/@michellibrito/spring-webflux-f611c8256c53
+
+Já a API (*Application Programming Interface*) se trata de um conjunto de rotinas documentado que disponibiliza meios para que as requisições recebidas sejam devidamente tratadas utilizando do estilo de arquitetura computacional para implementações de serviços web, denominado REST (*Representational State Transfer*), possibilitando integrações entre aplicações e também para estruturas cliente e servidor em páginas web e aplicações.
+
+Conceitualmente, o REST tem como premissa utilizar os métodos HTTP para definir a operação que está sendo efetuada e fornece como retorno a requisição protocolada, um código de operação, que identifica qual foi o procedimento realizado no lado do servidor, além de uma mensagem, que se trata do conteúdo (ou corpo) do protocolo de retorno.
 
 Resumindo, a API REST trabalha como mensageiro, levando informações de um ponto a outro utilizando os requerimentos do protocolo HTTP para formatá-las.
 
 No decorrer deste documento é apresentado com mais detalhes sua implementação, descrevendo como foi desenvolvida a estrutura da API, suas dependências e como foi colocado em prática o TDD para a realização dos testes unitários dos metodos na camada de negócio. Como implementamos do Spring Boot, para agilizar a análise do código e configurá-lo conforme nossas necessidades por meio dos *starters* agrupando as dependências, além do Spring Data JPA, que nos dá diversas funcionalidades permitindo uma melhor dinâmica nas operações com bancos de dados e sua manutenção.
 
-## Importação do Projeto Maven para Execução da Aplicação
+## Setting Up the Project
 O Apache Maven é uma ferramenta de apoio a equipes que trabalham com projeto Java (mas não se restringe somente a Java), possibilitando a desenvolvedores a automatizar, gerenciar e padronizar a construção e publicação de suas aplicações, permitindo maior agilidade e qualidade ao produto.
 Abaixo são apresentadas as etapas para importá-lo a IDE IntelliJ, mas também é possível trabalhar com outras IDE's como Eclipsse, NetBeans, entre outras, podendo ser diferente os procedimentos realizados.
 
 1. No menu principal, acesse File >> New >> Project from Existing Sources;
-2. Selecione o diretório onde está o projeto e clique "OK";
+2. Selecione o diretório onde está projeto e clique "OK";
 3. Selecione o arquivo pom.xml e clique em "Next";
 4. Deixe as configurações padrões e clique em "Next";
-5. Selecione a versão do seu JDK e clique em "Next" (Dê preferência a mesma apontada ao criar o projeto no Initializr);
+5. Selecione a versão do seu JDK e clique em "Next";
 6. Para finalizar, clique no botão "Finish".
-7. Para o projeto e localize o arquivo ``BeerstockApplication`` em src/main/br.com.supernova.beerstock;
+7. Para o projeto e localize o arquivo ``ApiMemberApplication`` em src/main/br.com.supernova.apimembers;
 8. Clique com o botão direito do *mouse* e selecione Run >> Spring Boot App, ou simplesmente *Run*.
 
 ![](/src/images/beerStock.png?w=400) 
 
-Se tudo der certo a aplicação Spring será executada pelo seguinte endereço [http://localhost:8080/api/v1/beers](http://localhost:8080/api/v1/beers).
+Se tudo der certo a aplicação Spring será executada pelo seguinte endereço [http://localhost:8080/api/v1/members](http://localhost:8080/api/v1/members).
 
-## Como Foi Configurado o Projeto Spring no IDEA-IntelliJ
-O projeto Spring foi criado a partir do [Spring Initializr](https://start.spring.io/), que é uma ferramenta de apoio para projetos com os frameworks Spring. Ele nos permite criar uma API com um endpoint (endereço para um recurso) possibilitando retornar nossos dados. Outra forma de criar projetos Spring é através do plugin, denominado Spring Tools Suíte (STS), na qual fornece as mesmas funcionalidades para estruturar as configurações pré-moldadas ao projeto, presente na IDE Eclipse. Abaixo segue os passos para configurar o Projeto Spring com os parâmetros necessários para implementação de uma API REST que servirão para ambas ferramentas.
-
-1. Acesse [https://start.spring.io/](https://start.spring.io/);
-2. Configure no campo *Project* qual é o tipo de Gerenciador de Dependências deseja utilizar e em qual linguagem de programação consiste o projeto:
-	* Neste projeto foi selecionado o gerenciador ``Maven`` e a linguagem de programação selecionada ``Java``;
-3. Configure no campo *Spring Boot* a versão do framework:
-	* Neste projeto foi utilizada a versão ``2.4.4``;
-4. Configure no campo de *Project Metadate* com as seguintes parametrizações:
-	* No parâmetro *Group*, informe o  endereço de domínio de trás para frente;
-	* No parâmetro *Artifact*, informe o nome do projeto novamente;
-	* No parâmetro *Name*, informe o nome do projeto;
-	* No parâmetro *Description*, informe um breve resumo sobre o projeto (Opcional)
-	* No parâmetro *Package Name*, informe o domínio de trás para frente mais o nome do projeto;
-	* Em Packaging, foi utilizada a opção Jar;
-	* Para Java Version, foi selecionado a versão do Java vigente da máquina, que está com a versão do JDK na 11, mas o projeto pode ser configurado com a versão 8, que já suporta o uso do expressão Stream em Collections, Lambda, Optional e Referência à Método.
-5. Configure no campo *Dependencies* a seguinte relação:
-	* DevTools;
-	* JPA;
-	* MySQL;
-	* Web.
-
-> NOTA: No Spring Initializr, após a configuração moldada será gerado um pacote Zip que deve ser importado pela IDE IDEA-IntelliJ (JetBrains).
-
-6. Extraia os arquivos para seu diretório de preferência;
-7. Abra o IntelliJ em Import Project;
-8. Selecione o arquivo pom.xml e clique em "Next";
-9. Deixe as configurações padrões e clique em "Next";
-10. Selecione a versão do seu JDK e clique em "Next" (Dê preferência a mesma apontada ao criar o projeto no Initializr);
-11. Para finalizar, clique no botão "Finish".
-
-Desta forma o starters já implementa um projeto praticamente funcional, onde encontramos a classe principal do nosso projeto em ``src/main/java`` com o pacote que configuramos Initializr (ou STS) ``br.com.nomedomínio.nomeprojeto``.
-```sh
-package br.com.supernova.beerstock;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class BeerstockApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(BeerstockApplication.class, args);
-	}
-}
-```
-A anotação @SpringBootApplication informa que a classe pertence as configurações do Spring, além de definir o ponto de partida para a procura de mais componentes relacionados a aplicação, desta forma, todas as classes devem seguir a partir deste pacote para serem mapeados pelo Spring.
 
 ## O Maven
 O Apache Maven é uma ferramenta que auxilia a equipes a trabalharem com projetos de desenvolvimento de software, possibilitando automatizar e padronizar a construção e publicação de aplicações. Ela é uma ferramenta de gerenciamento e automação de construção de projetos na qual estimula a adoção de boas práticas por utilizar o conceito de programação orientada a convenção. Isto permite uma melhor estruturação dos diretórios que constituí o projeto, desta forma, todos os integrantes do projeto possuíram a mesma estrutura padronizada, incluindo dependências, plugins e anotações.
@@ -146,7 +118,7 @@ public class SwaggerConfig {
 	}
 	
 	private Predicate<RequestHandler> apis(){
-		return RequestHandlerSelectors.basePackage("br.com.supernova.beerstock");
+		return RequestHandlerSelectors.basePackage("br.com.supernova.apimembers");
 	}
 
 	public ApiInfo constructorApiInfo() {
